@@ -78,6 +78,57 @@ RSpec.describe "Posts", type: :request do
 
         expect(response).to have_http_status(:created)
       end
+
+      it "published を指定すると保存される" do
+    payload = valid_params.deep_dup
+    payload[:post][:published] = true
+
+    post "/posts", params: payload, as: :json
+
+    expect(response).to have_http_status(:created)
+    json = JSON.parse(response.body)
+    expect(json["published"]).to eq(true)
+
+    expect(Post.find(json["id"]).published).to eq(true)   # ← DB の状態も確認
+  end
     end
   end
+
+  describe "GET /posts" do
+  let(:user) { create(:user) }
+  let!(:published_post) { create(:post, user: user, published: true) }
+  let!(:draft_post)     { create(:post, user: user, published: false) }
+
+  context "filter 未指定" do
+    it "全件返す" do
+      get "/posts"
+
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json.size).to eq(2)
+    end
+  end
+
+  context "filter=published" do
+    it "published のみ返す" do
+      get "/posts", params: { filter: "published" }
+
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json.size).to eq(1)
+      expect(json.first["id"]).to eq(published_post.id)
+    end
+  end
+
+  context "filter=draft" do
+    it "draft のみ返す" do
+      get "/posts", params: { filter: "draft" }
+
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json.size).to eq(1)
+      expect(json.first["id"]).to eq(draft_post.id)
+    end
+  end
+end
 end

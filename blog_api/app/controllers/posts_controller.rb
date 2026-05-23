@@ -3,7 +3,7 @@ class PostsController < ApplicationController
 
   # GET /posts
   def index
-    @posts = Post.all
+    @posts = filter_posts(Post.all)
 
     render json: @posts
   end
@@ -39,13 +39,19 @@ class PostsController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
     def set_post
       @post = Post.find(params.expect(:id))
     end
 
-    # Only allow a list of trusted parameters through.
     def post_params
-      params.expect(post: [ :title, :body, :user_id ])
+      params.expect(post: [ :title, :body, :user_id, :published ])
+    end
+
+    def filter_posts(scope)
+      case params[:filter]
+      when "published" then scope.published
+      when "draft"     then scope.where(published: false)
+      else scope
+      end
     end
 end

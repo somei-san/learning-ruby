@@ -13,12 +13,14 @@ users = [
 end
 
 users.each do |user|
-  next if user.posts.exists?
-
   3.times do |i|
-    user.posts.create!(
+    attrs = {
       title: "#{user.name}'s post ##{i + 1}",
-      body: "Sample body text for #{user.name}'s post number #{i + 1}."
-    )
+      body:  "..."
+    }
+    post = user.posts.find_or_create_by!(title: attrs[:title]) do |p|
+  p.body = attrs[:body]
+end
+    post.update!(published: i.zero?)
   end
 end
